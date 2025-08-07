@@ -2,6 +2,8 @@ import os
 import subprocess
 import sys
 import shutil
+from pathlib import Path
+
 
 class CommandHandler:
     TYPE_TEMPLATE = "{arg} is a shell builtin"
@@ -44,8 +46,9 @@ class CommandHandler:
 
     @staticmethod
     def handle_cd(arg: str) -> bool:
+        arg = Path(arg)
         try:
-            os.chdir(arg)
+            os.chdir(arg.expanduser())
         except FileNotFoundError:
             print(f"cd: {arg}: No such file or directory")
         return False
