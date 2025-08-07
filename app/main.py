@@ -1,32 +1,54 @@
 import sys
+import shutil
 
+class CommandHandler:
+    TYPE_TEMPLATE = "{arg} is a shell builtin"
+    TYPES_BUILTIN = {"echo", "type", "exit",}
 
-def main():
-    # Wait for user input
+    @staticmethod
+    def split_command(command: str) -> tuple[str, str]:
+        command, _, arg = command.partition(" ")
+        return command, arg
 
+    @staticmethod
+    def handle_echo(arg: str) -> bool:
+        print(arg)
+        return False
+
+    def handle_type(self, arg: str) -> bool:
+        if arg in self.TYPES_BUILTIN:
+            print(self.TYPE_TEMPLATE.format(arg=arg))
+        elif pathname := shutil.which(arg):
+            print(pathname)
+        else:
+            print(f"{arg}: not found")
+        return False
+
+    @staticmethod
+    def handle_default(command: str) -> bool:
+        print(f"{command}: command not found")
+        return False
+
+    def handle_command(self, command: str) -> bool:
+        match self.split_command(command):
+            case ("exit", "0"):
+                return True
+            case ("echo", arg):
+                return self.handle_echo(arg)
+            case ("type", arg):
+                return self.handle_type(arg)
+            case _:
+                return self.handle_default(command)
+
+def main() -> None:
+    """Entry point for the application script"""
     while True:
         sys.stdout.write("$ ")
-        command = input()
-        if command == "exit 0":
+        user_input = input()
+
+        should_exit = CommandHandler().handle_command(user_input)
+        if should_exit:
             break
-        if command.startswith("echo"):
-            print(command[5:])
-            continue
-        if command.startswith("type"):
-            value =  command[5:]
-            if value == "echo":
-                print("echo is a shell builtin")
-                continue
-            elif value == "exit":
-                print("exit is a shell builtin")
-                continue
-            elif value == "type":
-                print("type is a shell builtin")
-                continue
-            else:
-                print(f"{value}: not found")
-                continue
-        print(f"{command}: command not found")
 
 if __name__ == "__main__":
     main()
