@@ -5,12 +5,16 @@ import shutil
 
 class CommandHandler:
     TYPE_TEMPLATE = "{arg} is a shell builtin"
-    TYPES_BUILTIN = {"echo", "type", "exit",}
+    TYPES_BUILTIN = {"echo", "type", "exit", "pwd",}
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
         command, _, arg = command.partition(" ")
         return command, arg
+
+    @staticmethod
+    def find_executable(command: str) -> str | None:
+        return shutil.which(command)
 
 
     @staticmethod
@@ -28,8 +32,9 @@ class CommandHandler:
         return False
 
     @staticmethod
-    def find_executable(command: str) -> str | None:
-        return shutil.which(command)
+    def handle_pwd() -> bool:
+        print(os.getcwd())
+        return False
 
     @staticmethod
     def handle_exec(command: str, arg: str) -> bool:
@@ -50,6 +55,8 @@ class CommandHandler:
                 return self.handle_echo(arg)
             case ("type", arg):
                 return self.handle_type(arg)
+            case ("pwd", _):
+                return self.handle_pwd()
             case (command, arg):
                 if self.find_executable(command):
                     return self.handle_exec(command, arg)
