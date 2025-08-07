@@ -43,6 +43,14 @@ class CommandHandler:
         return False
 
     @staticmethod
+    def handle_cd(arg: str) -> bool:
+        try:
+            os.chdir(arg)
+        except FileNotFoundError:
+            print(f"cd: {arg}: No such file or directory")
+        return False
+
+    @staticmethod
     def handle_default(command: str) -> bool:
         print(f"{command}: command not found")
         return False
@@ -57,6 +65,8 @@ class CommandHandler:
                 return self.handle_type(arg)
             case ("pwd", _):
                 return self.handle_pwd()
+            case ("cd", arg):
+                return self.handle_cd(arg)
             case (command, arg):
                 if self.find_executable(command):
                     return self.handle_exec(command, arg)
