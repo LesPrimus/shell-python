@@ -1,3 +1,5 @@
+import os
+import subprocess
 import sys
 import shutil
 
@@ -9,6 +11,7 @@ class CommandHandler:
     def split_command(command: str) -> tuple[str, str]:
         command, _, arg = command.partition(" ")
         return command, arg
+
 
     @staticmethod
     def handle_echo(arg: str) -> bool:
@@ -25,6 +28,16 @@ class CommandHandler:
         return False
 
     @staticmethod
+    def find_executable(command: str) -> str | None:
+        return shutil.which(command)
+
+    @staticmethod
+    def handle_exec(command: str, arg: str) -> bool:
+        args = [command, *arg.split(" ")]
+        subprocess.run(args)
+        return False
+
+    @staticmethod
     def handle_default(command: str) -> bool:
         print(f"{command}: command not found")
         return False
@@ -37,8 +50,11 @@ class CommandHandler:
                 return self.handle_echo(arg)
             case ("type", arg):
                 return self.handle_type(arg)
-            case _:
+            case (command, arg):
+                if self.find_executable(command):
+                    return self.handle_exec(command, arg)
                 return self.handle_default(command)
+        return False
 
 def main() -> None:
     """Entry point for the application script"""
