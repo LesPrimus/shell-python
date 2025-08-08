@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 import sys
 import shutil
@@ -21,7 +22,7 @@ class CommandHandler:
 
     @staticmethod
     def handle_echo(arg: str) -> bool:
-        print(arg)
+        print(f"{" ".join(shlex.split(arg))}")
         return False
 
     def handle_type(self, arg: str) -> bool:
@@ -54,6 +55,12 @@ class CommandHandler:
         return False
 
     @staticmethod
+    def handle_cat(arg: str) -> bool:
+        args = shlex.split(arg)
+        subprocess.run(["cat", *args])
+        return False
+
+    @staticmethod
     def handle_default(command: str) -> bool:
         print(f"{command}: command not found")
         return False
@@ -70,6 +77,8 @@ class CommandHandler:
                 return self.handle_pwd()
             case ("cd", arg):
                 return self.handle_cd(arg)
+            case ("cat", arg):
+                return self.handle_cat(arg)
             case (command, arg):
                 if self.find_executable(command):
                     return self.handle_exec(command, arg)
