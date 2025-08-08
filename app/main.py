@@ -12,7 +12,7 @@ class CommandHandler:
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
-        command, _, arg = command.partition(" ")
+        command, *arg = shlex.split(command)
         return command, arg
 
     @staticmethod
@@ -22,10 +22,11 @@ class CommandHandler:
 
     @staticmethod
     def handle_echo(arg: str) -> bool:
-        print(f"{" ".join(shlex.split(arg))}")
+        print(f"{" ".join(arg)}")
         return False
 
     def handle_type(self, arg: str) -> bool:
+        arg = "".join(arg)
         if arg in self.TYPES_BUILTIN:
             print(self.TYPE_TEMPLATE.format(arg=arg))
         elif pathname := shutil.which(arg):
@@ -41,13 +42,13 @@ class CommandHandler:
 
     @staticmethod
     def handle_exec(command: str, arg: str) -> bool:
-        args = [command, *arg.split(" ")]
+        args = [command, *arg]
         subprocess.run(args)
         return False
 
     @staticmethod
     def handle_cd(arg: str) -> bool:
-        arg = Path(arg)
+        arg = Path("".join(arg))
         try:
             os.chdir(arg.expanduser())
         except FileNotFoundError:
@@ -56,8 +57,7 @@ class CommandHandler:
 
     @staticmethod
     def handle_cat(arg: str) -> bool:
-        args = shlex.split(arg)
-        subprocess.run(["cat", *args])
+        subprocess.run(["cat", *arg])
         return False
 
     @staticmethod
@@ -67,7 +67,7 @@ class CommandHandler:
 
     def handle_command(self, command: str) -> bool:
         match self.split_command(command):
-            case ("exit", "0"):
+            case ("exit", _):
                 return True
             case ("echo", arg):
                 return self.handle_echo(arg)
