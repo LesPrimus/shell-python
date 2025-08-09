@@ -19,6 +19,9 @@ class CommandHandler:
     def find_executable(command: str) -> str | None:
         return shutil.which(command)
 
+    @staticmethod
+    def is_a_redirect(command: str) -> bool:
+        return ">" in command or "1>" in command
 
     @staticmethod
     def handle_echo(arg: str) -> bool:
@@ -56,8 +59,8 @@ class CommandHandler:
         return False
 
     @staticmethod
-    def handle_cat(arg: str) -> bool:
-        subprocess.run(["cat", *arg])
+    def handle_redirect(command: str) -> bool:
+        subprocess.call(command, shell=True)
         return False
 
     @staticmethod
@@ -66,6 +69,8 @@ class CommandHandler:
         return False
 
     def handle_command(self, command: str) -> bool:
+        if self.is_a_redirect(command):
+            return self.handle_redirect(command)
         match self.split_command(command):
             case ("exit", _):
                 return True
@@ -77,8 +82,7 @@ class CommandHandler:
                 return self.handle_pwd()
             case ("cd", arg):
                 return self.handle_cd(arg)
-            case ("cat", arg):
-                return self.handle_cat(arg)
+
             case (command, arg):
                 if self.find_executable(command):
                     return self.handle_exec(command, arg)
