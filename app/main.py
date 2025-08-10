@@ -4,6 +4,31 @@ import subprocess
 import sys
 import shutil
 from pathlib import Path
+import readline
+
+
+class Autocompleter:
+    available_commands = ("echo", "type", "exit", "pwd", "cd")
+
+    def __init__(self, options = available_commands):
+        self.options = sorted(options)
+        self.matches = []
+
+    def complete(self, text, state):
+        if state == 0:
+            if text:
+                self.matches = [option for option in self.options
+                                if option.startswith(text)]
+            else:
+                self.matches = self.options[:]
+
+        # Return match indexed by state
+        if state < len(self.matches):
+            return f"{self.matches[state]} "
+        else:
+            return None
+
+
 
 
 class CommandHandler:
@@ -91,6 +116,10 @@ class CommandHandler:
 
 def main() -> None:
     """Entry point for the application script"""
+    completer = Autocompleter()
+    readline.set_completer(completer.complete)
+    readline.parse_and_bind("tab: complete")
+
     while True:
         sys.stdout.write("$ ")
         user_input = input()
@@ -98,6 +127,7 @@ def main() -> None:
         should_exit = CommandHandler().handle_command(user_input)
         if should_exit:
             break
+
 
 if __name__ == "__main__":
     main()
