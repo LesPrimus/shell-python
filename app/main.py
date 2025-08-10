@@ -28,7 +28,9 @@ class Autocompleter:
         else:
             return None
 
-
+completer = Autocompleter()
+readline.set_completer(completer.complete)
+readline.parse_and_bind("tab: complete")
 
 
 class CommandHandler:
@@ -116,10 +118,6 @@ class CommandHandler:
 
 def main() -> None:
     """Entry point for the application script"""
-    completer = Autocompleter()
-    readline.set_completer(completer.complete)
-    readline.parse_and_bind("tab: complete")
-
     while True:
         sys.stdout.write("$ ")
         user_input = input()
