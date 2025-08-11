@@ -10,9 +10,23 @@ import readline
 class Autocompleter:
     available_commands = ("echo", "type", "exit", "pwd", "cd")
 
-    def __init__(self, options = available_commands):
-        self.options = sorted(options)
+    def __init__(self):
+        self.options = self.get_options()
         self.matches = []
+
+    def get_options(self):
+        options = list(self.available_commands)
+        options.extend(self._get_path_executable())
+        return options
+
+    @staticmethod
+    def _get_path_executable():
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = Path(path)
+            if path.exists():
+                for file in path.iterdir():
+                    if file.is_file() and shutil.which(file.name):
+                        yield file.name
 
     def complete(self, text, state):
         if state == 0:
