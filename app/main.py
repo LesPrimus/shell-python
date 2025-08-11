@@ -56,7 +56,7 @@ readline.parse_and_bind("tab: complete")
 
 class CommandHandler:
     TYPE_TEMPLATE = "{arg} is a shell builtin"
-    TYPES_BUILTIN = {"echo", "type", "exit", "pwd",}
+    TYPES_BUILTIN = {"echo", "type", "exit", "pwd", "history",}
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
