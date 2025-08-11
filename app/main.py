@@ -42,8 +42,15 @@ class Autocompleter:
         else:
             return None
 
+    @classmethod
+    def complete_hook(cls, substitution, matches, longest_match_length):
+        print()
+        print(" ".join(matches))
+        print("$ " + readline.get_line_buffer(), end="", flush=True)
+
 completer = Autocompleter()
 readline.set_completer(completer.complete)
+readline.set_completion_display_matches_hook(Autocompleter.complete_hook)
 readline.parse_and_bind("tab: complete")
 
 
