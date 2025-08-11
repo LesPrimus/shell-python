@@ -3,8 +3,19 @@ import shlex
 import subprocess
 import sys
 import shutil
+from functools import wraps
 from pathlib import Path
 import readline
+
+def add_to_history(exclude=()):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, command):
+            if command not in exclude:
+                self.history.append(command)
+            return func(self, command)
+        return wrapper
+    return decorator
 
 
 class Autocompleter:
@@ -57,6 +68,9 @@ readline.parse_and_bind("tab: complete")
 class CommandHandler:
     TYPE_TEMPLATE = "{arg} is a shell builtin"
     TYPES_BUILTIN = {"echo", "type", "exit", "pwd", "history",}
+
+    def __init__(self):
+        self.history = []
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
@@ -120,6 +134,12 @@ class CommandHandler:
         print(f"{command}: command not found")
         return False
 
+    def handle_history(self):
+        for index, command in enumerate(self.history, start=1):
+            print(f"    {index}  {command}")
+        return False
+
+    @add_to_history()
     def handle_command(self, command: str) -> bool:
         if self.is_a_redirect(command) or self.is_a_pipe(command):
             return self.subprocess_call(command)
@@ -134,6 +154,8 @@ class CommandHandler:
                 return self.handle_pwd()
             case ("cd", arg):
                 return self.handle_cd(arg)
+            case ("history", _):
+                return self.handle_history()
 
             case (command, arg):
                 if self.find_executable(command):
@@ -143,11 +165,14 @@ class CommandHandler:
 
 def main() -> None:
     """Entry point for the application script"""
+
+    handler = CommandHandler()
+
     while True:
         sys.stdout.write("$ ")
         user_input = input()
 
-        should_exit = CommandHandler().handle_command(user_input)
+        should_exit = handler.handle_command(user_input)
         if should_exit:
             break
 
