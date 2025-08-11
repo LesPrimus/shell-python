@@ -72,6 +72,10 @@ class CommandHandler:
         return ">" in command or "1>" in command
 
     @staticmethod
+    def is_a_pipe(command: str) -> bool:
+        return "|" in command
+
+    @staticmethod
     def handle_echo(arg: str) -> bool:
         print(f"{" ".join(arg)}")
         return False
@@ -107,7 +111,7 @@ class CommandHandler:
         return False
 
     @staticmethod
-    def handle_redirect(command: str) -> bool:
+    def subprocess_call(command: str) -> bool:
         subprocess.call(command, shell=True)
         return False
 
@@ -117,8 +121,8 @@ class CommandHandler:
         return False
 
     def handle_command(self, command: str) -> bool:
-        if self.is_a_redirect(command):
-            return self.handle_redirect(command)
+        if self.is_a_redirect(command) or self.is_a_pipe(command):
+            return self.subprocess_call(command)
         match self.split_command(command):
             case ("exit", _):
                 return True
