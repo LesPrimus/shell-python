@@ -1,22 +1,9 @@
 import os
 import shlex
 import subprocess
-import sys
 import shutil
-from functools import wraps
 from pathlib import Path
 import readline
-
-def add_to_history(exclude=()):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(self, command):
-            if command not in exclude:
-                self.history.append(command)
-            return func(self, command)
-        return wrapper
-    return decorator
-
 
 class Autocompleter:
     available_commands = ("echo", "type", "exit", "pwd", "cd")
@@ -63,14 +50,12 @@ completer = Autocompleter()
 readline.set_completer(completer.complete)
 readline.set_completion_display_matches_hook(Autocompleter.complete_hook)
 readline.parse_and_bind("tab: complete")
+readline.set_auto_history(False)
 
 
 class CommandHandler:
     TYPE_TEMPLATE = "{arg} is a shell builtin"
     TYPES_BUILTIN = {"echo", "type", "exit", "pwd", "history",}
-
-    def __init__(self):
-        self.history = []
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
@@ -134,16 +119,21 @@ class CommandHandler:
         print(f"{command}: command not found")
         return False
 
-    def handle_history(self, number: str | None = None) -> bool:
-        indexed_history = list(enumerate(self.history, start=1))
-        if number:
-            indexed_history = indexed_history[-int(number):]
-        for index, command in indexed_history:
-            print(f"    {index}  {command}")
-        # self.history = []
+    @staticmethod
+    def handle_indexed_history(n) -> bool:
+        history_length = readline.get_current_history_length()
+        n = int(n)
+        for i in range(history_length + 1 - n, history_length + 1):
+            print(f"    {i}  {readline.get_history_item(i)}")
         return False
 
-    @add_to_history()
+    @staticmethod
+    def handle_history() -> bool:
+        history_len = readline.get_current_history_length()
+        for i in range(1, history_len + 1):
+            print(f"    {i}  {readline.get_history_item(i)}")
+        return False
+
     def handle_command(self, command: str) -> bool:
         if self.is_a_redirect(command) or self.is_a_pipe(command):
             return self.subprocess_call(command)
@@ -159,8 +149,7 @@ class CommandHandler:
             case ("cd", arg):
                 return self.handle_cd(arg)
             case ("history", [arg]):
-                return self.handle_history(arg)
-
+                return self.handle_indexed_history(arg)
             case ("history", _):
                 return self.handle_history()
 
@@ -177,8 +166,8 @@ def main() -> None:
     handler = CommandHandler()
 
     while True:
-        sys.stdout.write("$ ")
-        user_input = input()
+        user_input = input("$ ").strip()
+        readline.add_history(user_input)
 
         should_exit = handler.handle_command(user_input)
         if should_exit:
