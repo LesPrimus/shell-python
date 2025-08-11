@@ -134,9 +134,13 @@ class CommandHandler:
         print(f"{command}: command not found")
         return False
 
-    def handle_history(self):
-        for index, command in enumerate(self.history, start=1):
+    def handle_history(self, number: str | None = None) -> bool:
+        indexed_history = list(enumerate(self.history, start=1))
+        if number:
+            indexed_history = indexed_history[-int(number):]
+        for index, command in indexed_history:
             print(f"    {index}  {command}")
+        # self.history = []
         return False
 
     @add_to_history()
@@ -154,8 +158,12 @@ class CommandHandler:
                 return self.handle_pwd()
             case ("cd", arg):
                 return self.handle_cd(arg)
+            case ("history", [arg]):
+                return self.handle_history(arg)
+
             case ("history", _):
                 return self.handle_history()
+
 
             case (command, arg):
                 if self.find_executable(command):
