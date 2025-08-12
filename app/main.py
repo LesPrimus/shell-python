@@ -57,6 +57,9 @@ class CommandHandler:
     TYPE_TEMPLATE = "{arg} is a shell builtin"
     TYPES_BUILTIN = {"echo", "type", "exit", "pwd", "history",}
 
+    def __init__(self):
+        self.must_exit = False
+
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
         command, *arg = shlex.split(command)
@@ -75,11 +78,10 @@ class CommandHandler:
         return "|" in command
 
     @staticmethod
-    def handle_echo(arg: str) -> bool:
+    def handle_echo(arg: str):
         print(f"{" ".join(arg)}")
-        return False
 
-    def handle_type(self, arg: str) -> bool:
+    def handle_type(self, arg: str):
         arg = "".join(arg)
         if arg in self.TYPES_BUILTIN:
             print(self.TYPE_TEMPLATE.format(arg=arg))
@@ -87,112 +89,93 @@ class CommandHandler:
             print(pathname)
         else:
             print(f"{arg}: not found")
-        return False
 
     @staticmethod
-    def handle_pwd() -> bool:
+    def handle_pwd():
         print(os.getcwd())
-        return False
 
     @staticmethod
-    def handle_exec(command: str, arg: str) -> bool:
+    def handle_exec(command: str, arg: str):
         args = [command, *arg]
         subprocess.run(args)
-        return False
 
     @staticmethod
-    def handle_cd(arg: str) -> bool:
+    def handle_cd(arg: str):
         arg = Path("".join(arg))
         try:
             os.chdir(arg.expanduser())
         except FileNotFoundError:
             print(f"cd: {arg}: No such file or directory")
-        return False
 
     @staticmethod
-    def subprocess_call(command: str) -> bool:
+    def subprocess_call(command: str):
         subprocess.call(command, shell=True)
-        return False
 
     @staticmethod
-    def handle_default(command: str) -> bool:
+    def handle_default(command: str):
         print(f"{command}: command not found")
-        return False
 
     @staticmethod
-    def handle_indexed_history(n) -> bool:
+    def handle_indexed_history(n):
         history_length = readline.get_current_history_length()
         n = int(n)
         for i in range(history_length + 1 - n, history_length + 1):
             print(f"    {i}  {readline.get_history_item(i)}")
-        return False
 
     @staticmethod
-    def handle_history() -> bool:
+    def handle_history():
         history_len = readline.get_current_history_length()
         for i in range(1, history_len + 1):
             print(f"    {i}  {readline.get_history_item(i)}")
-        return False
 
     @staticmethod
-    def handle_history_from_filename(filename: str) -> bool:
+    def handle_history_from_filename(filename: str):
         readline.clear_history()
         readline.add_history(f"history -r {filename}")
         with Path(filename).open("r") as f:
             for line in f:
                 readline.add_history(line.strip())
-        return False
 
     @staticmethod
-    def write_to_history_file(filename: str) -> bool:
+    def write_to_history_file(filename: str):
         with Path(filename).open("w") as f:
             for i in range(1, readline.get_current_history_length() + 1):
                 f.write(f"{readline.get_history_item(i)}\n")
-        return False
 
-    def handle_command(self, command: str) -> bool:
+    def handle_command(self, command: str):
         if self.is_a_redirect(command) or self.is_a_pipe(command):
-            return self.subprocess_call(command)
-        match self.split_command(command):
-            case ("exit", _):
-                return True
-            case ("echo", arg):
-                return self.handle_echo(arg)
-            case ("type", arg):
-                return self.handle_type(arg)
-            case ("pwd", _):
-                return self.handle_pwd()
-            case ("cd", arg):
-                return self.handle_cd(arg)
-            case ("history", ["-w", filename]):
-                return self.write_to_history_file(filename)
-            case ("history", ["-r", filename]):
-                return self.handle_history_from_filename(filename)
-            case ("history", [arg]):
-                return self.handle_indexed_history(arg)
-            case ("history", _):
-                return self.handle_history()
+            self.subprocess_call(command)
+        else:
+            match self.split_command(command):
+                case ("exit", _):
+                    self.must_exit = True
+                case ("echo", arg):
+                    self.handle_echo(arg)
+                case ("type", arg):
+                    self.handle_type(arg)
+                case ("pwd", _):
+                    self.handle_pwd()
+                case ("cd", arg):
+                    self.handle_cd(arg)
+                case ("history", ["-w", filename]):
+                    self.write_to_history_file(filename)
+                case ("history", ["-r", filename]):
+                    self.handle_history_from_filename(filename)
+                case ("history", [arg]):
+                    self.handle_indexed_history(arg)
+                case ("history", _):
+                    self.handle_history()
+                case (command, arg):
+                    if self.find_executable(command):
+                        self.handle_exec(command, arg)
+                    else:
+                        self.handle_default(command)
 
-
-            case (command, arg):
-                if self.find_executable(command):
-                    return self.handle_exec(command, arg)
-                return self.handle_default(command)
-        return False
-
-def main() -> None:
-    """Entry point for the application script"""
-
-    handler = CommandHandler()
-
-    while True:
-        user_input = input("$ ").strip()
-        readline.add_history(user_input)
-
-        should_exit = handler.handle_command(user_input)
-        if should_exit:
-            break
-
+    def run(self):
+        while not self.must_exit:
+            user_input = input("$ ").strip()
+            readline.add_history(user_input)
+            self.handle_command(user_input)
 
 if __name__ == "__main__":
-    main()
+    CommandHandler().run()
