@@ -1,6 +1,0 @@
-echo 1
-echo 2
-history -w foo.txt
-echo 1
-echo 2
-history -a foo.txt

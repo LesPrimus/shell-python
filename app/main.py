@@ -2,6 +2,7 @@ import os
 import shlex
 import subprocess
 import shutil
+from contextlib import suppress
 from pathlib import Path
 import readline
 
@@ -60,6 +61,15 @@ class CommandHandler:
     def __init__(self):
         self.must_exit = False
         self.last_append_index = 1
+        self.load_history_file()
+
+    @staticmethod
+    def load_history_file():
+        with suppress(OSError):
+            if hist_file := os.getenv("HISTFILE"):
+                path = Path(hist_file)
+                if path.exists():
+                    readline.read_history_file(path)
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
