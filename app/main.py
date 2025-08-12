@@ -59,6 +59,7 @@ class CommandHandler:
 
     def __init__(self):
         self.must_exit = False
+        self.last_append_index = 1
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
@@ -142,6 +143,13 @@ class CommandHandler:
             for i in range(1, readline.get_current_history_length() + 1):
                 f.write(f"{readline.get_history_item(i)}\n")
 
+    def append_to_history(self, filename: str):
+        with Path(filename).open("a") as f:
+            for i in range(self.last_append_index, readline.get_current_history_length() + 1):
+                f.write(f"{readline.get_history_item(i)}\n")
+            self.last_append_index = readline.get_current_history_length() + 1
+
+
     def handle_command(self, command: str):
         if self.is_a_redirect(command) or self.is_a_pipe(command):
             self.subprocess_call(command)
@@ -157,6 +165,10 @@ class CommandHandler:
                     self.handle_pwd()
                 case ("cd", arg):
                     self.handle_cd(arg)
+
+                # -- History --
+                case ("history", ["-a", filename]):
+                    self.append_to_history(filename)
                 case ("history", ["-w", filename]):
                     self.write_to_history_file(filename)
                 case ("history", ["-r", filename]):
