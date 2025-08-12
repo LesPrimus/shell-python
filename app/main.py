@@ -1,3 +1,4 @@
+import atexit
 import os
 import shlex
 import subprocess
@@ -70,6 +71,13 @@ class CommandHandler:
                 path = Path(hist_file)
                 if path.exists():
                     readline.read_history_file(path)
+    @staticmethod
+    def save_history_file():
+        with suppress(OSError):
+            if hist_file := os.getenv("HISTFILE"):
+                path = Path(hist_file)
+                if path.exists():
+                    readline.write_history_file(path)
 
     @staticmethod
     def split_command(command: str) -> tuple[str, str]:
@@ -166,6 +174,7 @@ class CommandHandler:
         else:
             match self.split_command(command):
                 case ("exit", _):
+                    atexit.register(self.save_history_file)
                     self.must_exit = True
                 case ("echo", arg):
                     self.handle_echo(arg)
