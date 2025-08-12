@@ -134,6 +134,15 @@ class CommandHandler:
             print(f"    {i}  {readline.get_history_item(i)}")
         return False
 
+    @staticmethod
+    def handle_history_from_filename(filename: str) -> bool:
+        readline.clear_history()
+        readline.add_history(f"history -r {filename}")
+        with Path(filename).open("r") as f:
+            for line in f:
+                readline.add_history(line.strip())
+        return False
+
     def handle_command(self, command: str) -> bool:
         if self.is_a_redirect(command) or self.is_a_pipe(command):
             return self.subprocess_call(command)
@@ -148,6 +157,8 @@ class CommandHandler:
                 return self.handle_pwd()
             case ("cd", arg):
                 return self.handle_cd(arg)
+            case ("history", ["-r", filename]):
+                return self.handle_history_from_filename(filename)
             case ("history", [arg]):
                 return self.handle_indexed_history(arg)
             case ("history", _):
