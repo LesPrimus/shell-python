@@ -143,6 +143,13 @@ class CommandHandler:
                 readline.add_history(line.strip())
         return False
 
+    @staticmethod
+    def write_to_history_file(filename: str) -> bool:
+        with Path(filename).open("w") as f:
+            for i in range(1, readline.get_current_history_length() + 1):
+                f.write(f"{readline.get_history_item(i)}\n")
+        return False
+
     def handle_command(self, command: str) -> bool:
         if self.is_a_redirect(command) or self.is_a_pipe(command):
             return self.subprocess_call(command)
@@ -157,6 +164,8 @@ class CommandHandler:
                 return self.handle_pwd()
             case ("cd", arg):
                 return self.handle_cd(arg)
+            case ("history", ["-w", filename]):
+                return self.write_to_history_file(filename)
             case ("history", ["-r", filename]):
                 return self.handle_history_from_filename(filename)
             case ("history", [arg]):
